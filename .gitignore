@@ -1,0 +1,27 @@
+# --- Backend (Node.js) ---
+backend/node_modules/
+backend/.env
+backend/coverage/
+backend/npm-debug.log*
+
+# --- Android ---
+android/local.properties
+android/.gradle/
+android/build/
+android/app/build/
+android/captures/
+android/.cxx/
+android/*.iml
+android/app/*.iml
+android/app/release/
+android/app/debug/
+*.apk
+*.aab
+
+# --- IDE ---
+.idea/
+*.iml
+
+# --- OS ---
+.DS_Store
+Thumbs.db

@@ -1,0 +1,290 @@
+{
+  "info": {
+    "name": "Roadside Assistance API",
+    "description": "REST API за дипломен проект \"Мобилно приложение за пътна помощ\". Пусни заявките по ред отгоре надолу - всяка следваща използва променливи (token, requestId, vehicleId), автоматично запазени от предходната чрез test скриптове.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:5000" },
+    { "key": "clientToken", "value": "" },
+    { "key": "providerToken", "value": "" },
+    { "key": "vehicleId", "value": "" },
+    { "key": "requestId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "Health check",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/health"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register CLIENT",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const data = pm.response.json();",
+                  "pm.collectionVariables.set('clientToken', data.token);",
+                  "pm.test('201 Created', () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Ivan Ivanov\",\n  \"email\": \"client1@test.com\",\n  \"password\": \"test123\",\n  \"phone\": \"0888111222\",\n  \"role\": \"CLIENT\"\n}"
+            },
+            "url": "{{baseUrl}}/api/auth/register"
+          }
+        },
+        {
+          "name": "Register PROVIDER",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const data = pm.response.json();",
+                  "pm.collectionVariables.set('providerToken', data.token);",
+                  "pm.test('201 Created', () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Petar Petrov\",\n  \"email\": \"provider1@test.com\",\n  \"password\": \"test123\",\n  \"phone\": \"0888333444\",\n  \"role\": \"PROVIDER\"\n}"
+            },
+            "url": "{{baseUrl}}/api/auth/register"
+          }
+        },
+        {
+          "name": "Login CLIENT",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const data = pm.response.json();",
+                  "pm.collectionVariables.set('clientToken', data.token);",
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"client1@test.com\",\n  \"password\": \"test123\"\n}"
+            },
+            "url": "{{baseUrl}}/api/auth/login"
+          }
+        },
+        {
+          "name": "Login PROVIDER",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const data = pm.response.json();",
+                  "pm.collectionVariables.set('providerToken', data.token);",
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"provider1@test.com\",\n  \"password\": \"test123\"\n}"
+            },
+            "url": "{{baseUrl}}/api/auth/login"
+          }
+        },
+        {
+          "name": "Get current user (/me)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{clientToken}}" }],
+            "url": "{{baseUrl}}/api/auth/me"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Vehicles",
+      "item": [
+        {
+          "name": "Create vehicle (CLIENT)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const data = pm.response.json();",
+                  "pm.collectionVariables.set('vehicleId', data.vehicle._id);",
+                  "pm.test('201 Created', () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{clientToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"make\": \"Toyota\",\n  \"model\": \"Corolla\",\n  \"licensePlate\": \"CA1234BH\",\n  \"year\": 2018\n}"
+            },
+            "url": "{{baseUrl}}/api/vehicles"
+          }
+        },
+        {
+          "name": "List my vehicles (CLIENT)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{clientToken}}" }],
+            "url": "{{baseUrl}}/api/vehicles"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Requests",
+      "item": [
+        {
+          "name": "Create request (CLIENT)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const data = pm.response.json();",
+                  "pm.collectionVariables.set('requestId', data.request._id);",
+                  "pm.test('201 Created', () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{clientToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"serviceType\": \"TOWING\",\n  \"lat\": 42.6977,\n  \"lng\": 23.3219,\n  \"description\": \"Колата не пали\",\n  \"vehicleId\": \"{{vehicleId}}\"\n}"
+            },
+            "url": "{{baseUrl}}/api/requests"
+          }
+        },
+        {
+          "name": "Get nearby requests (PROVIDER)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{providerToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/requests/nearby?lat=42.70&lng=23.32&maxDistance=15000",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "requests", "nearby"],
+              "query": [
+                { "key": "lat", "value": "42.70" },
+                { "key": "lng", "value": "23.32" },
+                { "key": "maxDistance", "value": "15000" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get my requests",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{clientToken}}" }],
+            "url": "{{baseUrl}}/api/requests/my"
+          }
+        },
+        {
+          "name": "Get request by id",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{clientToken}}" }],
+            "url": "{{baseUrl}}/api/requests/{{requestId}}"
+          }
+        },
+        {
+          "name": "Update status - Accept (PROVIDER)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{providerToken}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"status\": \"ACCEPTED\"\n}" },
+            "url": "{{baseUrl}}/api/requests/{{requestId}}/status"
+          }
+        },
+        {
+          "name": "Update status - Start (PROVIDER)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{providerToken}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"status\": \"IN_PROGRESS\"\n}" },
+            "url": "{{baseUrl}}/api/requests/{{requestId}}/status"
+          }
+        },
+        {
+          "name": "Update status - Complete (PROVIDER)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{providerToken}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"status\": \"COMPLETED\"\n}" },
+            "url": "{{baseUrl}}/api/requests/{{requestId}}/status"
+          }
+        },
+        {
+          "name": "Update status - Cancel (CLIENT)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{clientToken}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"status\": \"CANCELLED\"\n}" },
+            "url": "{{baseUrl}}/api/requests/{{requestId}}/status"
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Опростена силуетна икона на кола, центрирана в safe zone-а на adaptive icon -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M34,66 L34,58 C34,54 37,50 41,49 L45,42 C47,38 51,36 55,36 L63,36 C67,36 71,38 73,42 L77,49 C81,50 84,54 84,58 L84,66 C84,68 82,70 80,70 L78,70 C76,70 74,68 74,66 L74,64 L44,64 L44,66 C44,68 42,70 40,70 L38,70 C36,70 34,68 34,66 Z" />
+    <path
+        android:fillColor="@color/ic_launcher_background"
+        android:pathData="M42,66 m-4,0 a4,4 0 1,0 8,0 a4,4 0 1,0 -8,0" />
+    <path
+        android:fillColor="@color/ic_launcher_background"
+        android:pathData="M76,66 m-4,0 a4,4 0 1,0 8,0 a4,4 0 1,0 -8,0" />
+</vector>
