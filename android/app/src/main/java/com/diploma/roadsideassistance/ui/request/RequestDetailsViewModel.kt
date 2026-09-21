@@ -22,6 +22,7 @@ data class RequestDetailsUiState(
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
     val isUpdatingStatus: Boolean = false,
+    val isSubmittingRating: Boolean = false,
 )
 
 // Няма push/WebSockets (съзнателно решение за обхвата на проекта) - статусът на
@@ -74,6 +75,24 @@ class RequestDetailsViewModel(
                 }
                 is Resource.Error -> {
                     _uiState.value = _uiState.value.copy(isUpdatingStatus = false)
+                    onError(result.message)
+                }
+                else -> Unit
+            }
+        }
+    }
+
+    // Клиентът оценява доставчика еднократно, само след COMPLETED (валидира се и на бекенда)
+    fun submitRating(rating: Int, comment: String, onError: (String) -> Unit) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isSubmittingRating = true)
+
+            when (val result = repository.rateRequest(requestId, rating, comment.ifBlank { null })) {
+                is Resource.Success -> {
+                    _uiState.value = _uiState.value.copy(isSubmittingRating = false, request = result.data.request)
+                }
+                is Resource.Error -> {
+                    _uiState.value = _uiState.value.copy(isSubmittingRating = false)
                     onError(result.message)
                 }
                 else -> Unit

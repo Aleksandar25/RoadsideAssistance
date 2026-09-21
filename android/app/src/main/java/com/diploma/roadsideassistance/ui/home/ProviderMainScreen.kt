@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -20,6 +21,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.diploma.roadsideassistance.data.location.LocationProvider
 import com.diploma.roadsideassistance.data.remote.dto.UserDto
+import com.diploma.roadsideassistance.data.repository.AuthRepository
 import com.diploma.roadsideassistance.data.repository.RequestRepository
 import com.diploma.roadsideassistance.ui.profile.ProfileScreen
 import com.diploma.roadsideassistance.ui.provider.NearbyRequestsScreen
@@ -37,8 +39,11 @@ fun ProviderMainScreen(
     user: UserDto,
     requestRepository: RequestRepository,
     locationProvider: LocationProvider,
+    authRepository: AuthRepository,
     onLogout: () -> Unit,
     onOpenRequest: (String) -> Unit,
+    onNavigateToMyRequests: () -> Unit,
+    onProfileUpdated: (UserDto) -> Unit,
 ) {
     var selectedTab by remember { mutableStateOf(ProviderTab.NEARBY) }
 
@@ -53,6 +58,12 @@ fun ProviderMainScreen(
                     onClick = { selectedTab = ProviderTab.NEARBY },
                     icon = { Icon(Icons.Default.Home, contentDescription = null) },
                     label = { Text(ProviderTab.NEARBY.label) },
+                )
+                NavigationBarItem(
+                    selected = false,
+                    onClick = onNavigateToMyRequests,
+                    icon = { Icon(Icons.Default.List, contentDescription = null) },
+                    label = { Text("Моите заявки") },
                 )
                 NavigationBarItem(
                     selected = selectedTab == ProviderTab.PROFILE,
@@ -70,7 +81,12 @@ fun ProviderMainScreen(
                     locationProvider = locationProvider,
                     onOpenRequest = onOpenRequest,
                 )
-                ProviderTab.PROFILE -> ProfileScreen(user = user, onLogout = onLogout)
+                ProviderTab.PROFILE -> ProfileScreen(
+                    user = user,
+                    authRepository = authRepository,
+                    onLogout = onLogout,
+                    onProfileUpdated = onProfileUpdated,
+                )
             }
         }
     }

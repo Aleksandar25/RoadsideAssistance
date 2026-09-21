@@ -80,3 +80,38 @@ describe('POST /api/auth/login', () => {
     expect(res.status).toBe(401);
   });
 });
+
+describe('PATCH /api/auth/me', () => {
+  it('обновява име и телефон на текущия потребител', async () => {
+    const registerRes = await request(app).post('/api/auth/register').send(clientPayload);
+    const token = registerRes.body.token;
+
+    const res = await request(app)
+      .patch('/api/auth/me')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ name: 'Ivan Petrov', phone: '0899999999' });
+
+    expect(res.status).toBe(200);
+    expect(res.body.user.name).toBe('Ivan Petrov');
+    expect(res.body.user.phone).toBe('0899999999');
+    expect(res.body.user.email).toBe(clientPayload.email);
+  });
+
+  it('връща 400 при липсващо задължително поле', async () => {
+    const registerRes = await request(app).post('/api/auth/register').send(clientPayload);
+    const token = registerRes.body.token;
+
+    const res = await request(app)
+      .patch('/api/auth/me')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ name: 'Ivan Petrov' });
+
+    expect(res.status).toBe(400);
+  });
+
+  it('връща 401 без токен', async () => {
+    const res = await request(app).patch('/api/auth/me').send({ name: 'X', phone: '000' });
+
+    expect(res.status).toBe(401);
+  });
+});

@@ -19,6 +19,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.diploma.roadsideassistance.data.remote.dto.UserDto
+import com.diploma.roadsideassistance.data.repository.AuthRepository
 import com.diploma.roadsideassistance.ui.profile.ProfileScreen
 
 private enum class ClientTab(val label: String) {
@@ -32,10 +33,12 @@ private enum class ClientTab(val label: String) {
 @Composable
 fun ClientMainScreen(
     user: UserDto,
+    authRepository: AuthRepository,
     onLogout: () -> Unit,
     onNavigateToVehicles: () -> Unit,
     onNavigateToCreateRequest: () -> Unit,
     onNavigateToMyRequests: () -> Unit,
+    onProfileUpdated: (UserDto) -> Unit,
 ) {
     var selectedTab by remember { mutableStateOf(ClientTab.HOME) }
 
@@ -68,7 +71,12 @@ fun ClientMainScreen(
                     onNavigateToCreateRequest = onNavigateToCreateRequest,
                     onNavigateToMyRequests = onNavigateToMyRequests,
                 )
-                ClientTab.PROFILE -> ProfileScreen(user = user, onLogout = onLogout)
+                ClientTab.PROFILE -> ProfileScreen(
+                    user = user,
+                    authRepository = authRepository,
+                    onLogout = onLogout,
+                    onProfileUpdated = onProfileUpdated,
+                )
             }
         }
     }

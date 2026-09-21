@@ -2,6 +2,7 @@ package com.diploma.roadsideassistance.data.repository
 
 import com.diploma.roadsideassistance.data.remote.ApiService
 import com.diploma.roadsideassistance.data.remote.dto.CreateRequestBody
+import com.diploma.roadsideassistance.data.remote.dto.RateRequestBody
 import com.diploma.roadsideassistance.data.remote.dto.RequestListResponse
 import com.diploma.roadsideassistance.data.remote.dto.RequestStatus
 import com.diploma.roadsideassistance.data.remote.dto.ServiceType
@@ -45,5 +46,13 @@ class RequestRepository(private val api: ApiService) {
         status: RequestStatus,
     ): Resource<SingleRequestResponse> = safeApiCall {
         api.updateRequestStatus(id, UpdateStatusBody(status))
+    }
+
+    suspend fun rateRequest(
+        id: String,
+        rating: Int,
+        comment: String? = null,
+    ): Resource<SingleRequestResponse> = safeApiCall {
+        api.rateRequest(id, RateRequestBody(rating, comment))
     }
 }

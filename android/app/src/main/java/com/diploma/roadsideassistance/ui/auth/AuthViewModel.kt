@@ -100,6 +100,12 @@ class AuthViewModel(private val repository: AuthRepository) : ViewModel() {
     fun clearError() {
         _uiState.value = _uiState.value.copy(errorMessage = null)
     }
+
+    // Извиква се след успешна редакция на профила (ProfileScreen), за да отрази
+    // веднага новото име/телефон навсякъде, където се чете loggedInUser.
+    fun updateLoggedInUser(user: UserDto) {
+        _uiState.value = _uiState.value.copy(loggedInUser = user)
+    }
 }
 
 class AuthViewModelFactory(private val repository: AuthRepository) : ViewModelProvider.Factory {

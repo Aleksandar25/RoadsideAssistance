@@ -70,10 +70,12 @@ fun RoadsideNavGraph(container: AppContainer) {
             uiState.loggedInUser?.let { user ->
                 ClientMainScreen(
                     user = user,
+                    authRepository = container.authRepository,
                     onLogout = { authViewModel.logout() },
                     onNavigateToVehicles = { navController.navigate(Screen.Vehicles.route) },
                     onNavigateToCreateRequest = { navController.navigate(Screen.CreateRequest.route) },
                     onNavigateToMyRequests = { navController.navigate(Screen.MyRequests.route) },
+                    onProfileUpdated = { authViewModel.updateLoggedInUser(it) },
                 )
             }
         }
@@ -83,10 +85,13 @@ fun RoadsideNavGraph(container: AppContainer) {
                     user = user,
                     requestRepository = container.requestRepository,
                     locationProvider = container.locationProvider,
+                    authRepository = container.authRepository,
                     onLogout = { authViewModel.logout() },
                     onOpenRequest = { requestId ->
                         navController.navigate(Screen.RequestDetails.buildRoute(requestId))
                     },
+                    onNavigateToMyRequests = { navController.navigate(Screen.MyRequests.route) },
+                    onProfileUpdated = { authViewModel.updateLoggedInUser(it) },
                 )
             }
         }

@@ -52,6 +52,8 @@ data class ServiceRequestDto(
     val description: String?,
     val status: RequestStatus,
     val statusHistory: List<StatusHistoryEntryDto> = emptyList(),
+    val rating: Int? = null,
+    val ratingComment: String? = null,
     val createdAt: String,
     val updatedAt: String,
 )
@@ -69,6 +71,11 @@ data class CreateRequestBody(
 
 data class UpdateStatusBody(
     val status: RequestStatus,
+)
+
+data class RateRequestBody(
+    val rating: Int,
+    val comment: String? = null,
 )
 
 // --- Отговори (response bodies) ---

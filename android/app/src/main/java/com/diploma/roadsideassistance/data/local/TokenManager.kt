@@ -43,6 +43,14 @@ class TokenManager(private val context: Context) {
         }
     }
 
+    // Обновява само локално кешираните данни за потребителя (напр. след редакция на
+    // профил), без да пипа токена - сесията остава същата.
+    suspend fun updateUser(user: UserDto) {
+        context.dataStore.edit { prefs ->
+            prefs[Keys.USER_JSON] = gson.toJson(user)
+        }
+    }
+
     suspend fun clearSession() {
         context.dataStore.edit { prefs ->
             prefs.remove(Keys.TOKEN)

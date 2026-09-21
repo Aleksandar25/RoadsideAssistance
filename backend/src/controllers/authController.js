@@ -80,4 +80,33 @@ const getMe = async (req, res) => {
   res.status(200).json({ user: req.user });
 };
 
-module.exports = { register, login, getMe };
+// @route   PATCH /api/auth/me
+// @desc    Редакция на име/телефон на текущия потребител (не и имейл/парола/роля)
+// @access  Private
+const updateProfile = async (req, res, next) => {
+  try {
+    const { name, phone } = req.body;
+
+    if (!name || !phone) {
+      return res.status(400).json({ message: 'Името и телефонът са задължителни' });
+    }
+
+    req.user.name = name;
+    req.user.phone = phone;
+    await req.user.save();
+
+    res.status(200).json({
+      user: {
+        id: req.user._id,
+        name: req.user.name,
+        email: req.user.email,
+        phone: req.user.phone,
+        role: req.user.role,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports = { register, login, getMe, updateProfile };

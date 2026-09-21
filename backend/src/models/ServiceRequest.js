@@ -77,6 +77,18 @@ const serviceRequestSchema = new mongoose.Schema(
       type: [statusHistorySchema],
       default: [],
     },
+    // Оценка от клиента след COMPLETED - попълва се еднократно чрез PATCH /:id/rating
+    rating: {
+      type: Number,
+      min: 1,
+      max: 5,
+      default: null,
+    },
+    ratingComment: {
+      type: String,
+      trim: true,
+      default: '',
+    },
   },
   { timestamps: true }
 );

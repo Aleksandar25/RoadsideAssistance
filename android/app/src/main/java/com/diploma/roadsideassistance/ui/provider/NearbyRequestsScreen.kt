@@ -44,6 +44,7 @@ import com.diploma.roadsideassistance.data.repository.RequestRepository
 import com.diploma.roadsideassistance.util.LOCATION_PERMISSIONS
 import com.diploma.roadsideassistance.util.displayName
 import com.diploma.roadsideassistance.util.hasLocationPermission
+import com.diploma.roadsideassistance.util.haversineDistanceKm
 import com.diploma.roadsideassistance.util.rememberLocationPermissionLauncher
 
 // Съдържание на таб "Наблизо" за роля PROVIDER - реалният списък със заявки,
@@ -134,8 +135,20 @@ fun NearbyRequestsScreen(
                     contentPadding = PaddingValues(16.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
+                    val providerLat = uiState.providerLatitude
+                    val providerLng = uiState.providerLongitude
                     items(uiState.requests, key = { it.id }) { item ->
-                        NearbyRequestRow(request = item, onClick = { onOpenRequest(item.id) })
+                        val distanceKm = if (providerLat != null && providerLng != null) {
+                            haversineDistanceKm(
+                                providerLat,
+                                providerLng,
+                                item.location.latitude,
+                                item.location.longitude,
+                            )
+                        } else {
+                            null
+                        }
+                        NearbyRequestRow(request = item, distanceKm = distanceKm, onClick = { onOpenRequest(item.id) })
                     }
                 }
             }
@@ -144,7 +157,7 @@ fun NearbyRequestsScreen(
 }
 
 @Composable
-private fun NearbyRequestRow(request: ServiceRequestDto, onClick: () -> Unit) {
+private fun NearbyRequestRow(request: ServiceRequestDto, distanceKm: Double?, onClick: () -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -162,6 +175,14 @@ private fun NearbyRequestRow(request: ServiceRequestDto, onClick: () -> Unit) {
                     style = MaterialTheme.typography.bodyLarge,
                 )
                 Text(text = request.client?.name ?: "")
+            }
+            if (distanceKm != null) {
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = "%.1f км от теб".format(distanceKm),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.primary,
+                )
             }
             if (!request.description.isNullOrBlank()) {
                 Spacer(modifier = Modifier.height(4.dp))

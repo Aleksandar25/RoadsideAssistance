@@ -20,6 +20,11 @@ data class LoginRequest(
     val password: String,
 )
 
+data class UpdateProfileRequest(
+    val name: String,
+    val phone: String,
+)
+
 data class UserDto(
     @SerializedName("id") val id: String,
     val name: String,
@@ -30,6 +35,10 @@ data class UserDto(
 
 data class AuthResponse(
     val token: String,
+    val user: UserDto,
+)
+
+data class UserResponse(
     val user: UserDto,
 )
 

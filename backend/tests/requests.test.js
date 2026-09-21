@@ -20,6 +20,14 @@ const registerAndLogin = async (role, email) => {
 
 const sofiaCoords = { lat: 42.6977, lng: 23.3219 };
 
+const createPendingRequest = async (clientToken) => {
+  const res = await request(app)
+    .post('/api/requests')
+    .set('Authorization', `Bearer ${clientToken}`)
+    .send({ serviceType: 'TIRE_CHANGE', ...sofiaCoords });
+  return res.body.request._id;
+};
+
 describe('POST /api/requests', () => {
   it('CLIENT създава заявка успешно', async () => {
     const clientToken = await registerAndLogin('CLIENT', 'client@test.com');
@@ -105,14 +113,6 @@ describe('GET /api/requests/nearby', () => {
 });
 
 describe('PATCH /api/requests/:id/status', () => {
-  const createPendingRequest = async (clientToken) => {
-    const res = await request(app)
-      .post('/api/requests')
-      .set('Authorization', `Bearer ${clientToken}`)
-      .send({ serviceType: 'TIRE_CHANGE', ...sofiaCoords });
-    return res.body.request._id;
-  };
-
   it('PROVIDER приема чакаща заявка (PENDING -> ACCEPTED)', async () => {
     const clientToken = await registerAndLogin('CLIENT', 'client@test.com');
     const providerToken = await registerAndLogin('PROVIDER', 'provider@test.com');
@@ -158,5 +158,103 @@ describe('PATCH /api/requests/:id/status', () => {
       .send({ status: 'IN_PROGRESS' });
 
     expect(res.status).toBe(403);
+  });
+});
+
+describe('PATCH /api/requests/:id/rating', () => {
+  // Прекарва заявка през целия жизнен цикъл до COMPLETED, за да тества rating-а
+  const createCompletedRequest = async (clientToken, providerToken) => {
+    const createRes = await request(app)
+      .post('/api/requests')
+      .set('Authorization', `Bearer ${clientToken}`)
+      .send({ serviceType: 'JUMP_START', ...sofiaCoords });
+    const requestId = createRes.body.request._id;
+
+    await request(app)
+      .patch(`/api/requests/${requestId}/status`)
+      .set('Authorization', `Bearer ${providerToken}`)
+      .send({ status: 'ACCEPTED' });
+    await request(app)
+      .patch(`/api/requests/${requestId}/status`)
+      .set('Authorization', `Bearer ${providerToken}`)
+      .send({ status: 'IN_PROGRESS' });
+    await request(app)
+      .patch(`/api/requests/${requestId}/status`)
+      .set('Authorization', `Bearer ${providerToken}`)
+      .send({ status: 'COMPLETED' });
+
+    return requestId;
+  };
+
+  it('CLIENT оценява собствена COMPLETED заявка успешно', async () => {
+    const clientToken = await registerAndLogin('CLIENT', 'client@test.com');
+    const providerToken = await registerAndLogin('PROVIDER', 'provider@test.com');
+    const requestId = await createCompletedRequest(clientToken, providerToken);
+
+    const res = await request(app)
+      .patch(`/api/requests/${requestId}/rating`)
+      .set('Authorization', `Bearer ${clientToken}`)
+      .send({ rating: 5, comment: 'Много бърза реакция' });
+
+    expect(res.status).toBe(200);
+    expect(res.body.request.rating).toBe(5);
+    expect(res.body.request.ratingComment).toBe('Много бърза реакция');
+  });
+
+  it('връща 400 при опит за оценка на все още неприключена заявка', async () => {
+    const clientToken = await registerAndLogin('CLIENT', 'client@test.com');
+    const requestId = await createPendingRequest(clientToken);
+
+    const res = await request(app)
+      .patch(`/api/requests/${requestId}/rating`)
+      .set('Authorization', `Bearer ${clientToken}`)
+      .send({ rating: 4 });
+
+    expect(res.status).toBe(400);
+  });
+
+  it('връща 400 при невалидна оценка извън диапазона 1-5', async () => {
+    const clientToken = await registerAndLogin('CLIENT', 'client@test.com');
+    const providerToken = await registerAndLogin('PROVIDER', 'provider@test.com');
+    const requestId = await createCompletedRequest(clientToken, providerToken);
+
+    const res = await request(app)
+      .patch(`/api/requests/${requestId}/rating`)
+      .set('Authorization', `Bearer ${clientToken}`)
+      .send({ rating: 7 });
+
+    expect(res.status).toBe(400);
+  });
+
+  it('връща 403, ако друг клиент (не собственик) опита да оцени заявката', async () => {
+    const clientToken = await registerAndLogin('CLIENT', 'client@test.com');
+    const providerToken = await registerAndLogin('PROVIDER', 'provider@test.com');
+    const otherClientToken = await registerAndLogin('CLIENT', 'other-client@test.com');
+    const requestId = await createCompletedRequest(clientToken, providerToken);
+
+    const res = await request(app)
+      .patch(`/api/requests/${requestId}/rating`)
+      .set('Authorization', `Bearer ${otherClientToken}`)
+      .send({ rating: 3 });
+
+    expect(res.status).toBe(403);
+  });
+
+  it('връща 400 при повторна оценка на вече оценена заявка', async () => {
+    const clientToken = await registerAndLogin('CLIENT', 'client@test.com');
+    const providerToken = await registerAndLogin('PROVIDER', 'provider@test.com');
+    const requestId = await createCompletedRequest(clientToken, providerToken);
+
+    await request(app)
+      .patch(`/api/requests/${requestId}/rating`)
+      .set('Authorization', `Bearer ${clientToken}`)
+      .send({ rating: 4 });
+
+    const res = await request(app)
+      .patch(`/api/requests/${requestId}/rating`)
+      .set('Authorization', `Bearer ${clientToken}`)
+      .send({ rating: 2 });
+
+    expect(res.status).toBe(400);
   });
 });

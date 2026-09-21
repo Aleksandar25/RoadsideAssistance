@@ -204,10 +204,53 @@ const getRequestById = async (req, res, next) => {
   }
 };
 
+// @route   PATCH /api/requests/:id/rating
+// @desc    Клиентът оценява доставчика след приключена (COMPLETED) заявка
+// @access  Private (CLIENT, собственик на заявката)
+const rateRequest = async (req, res, next) => {
+  try {
+    const { rating, comment } = req.body;
+
+    if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
+      return res.status(400).json({ message: 'Оценката трябва да е цяло число от 1 до 5' });
+    }
+
+    const request = await ServiceRequest.findById(req.params.id);
+    if (!request) {
+      return res.status(404).json({ message: 'Заявката не е намерена' });
+    }
+
+    if (request.client.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'Това не е Ваша заявка' });
+    }
+
+    if (request.status !== 'COMPLETED') {
+      return res.status(400).json({ message: 'Може да оцените само приключена заявка' });
+    }
+
+    if (request.rating !== null) {
+      return res.status(400).json({ message: 'Вече сте оценили тази заявка' });
+    }
+
+    request.rating = rating;
+    request.ratingComment = comment || '';
+    await request.save();
+
+    await request.populate('client', 'name phone');
+    await request.populate('provider', 'name phone');
+    await request.populate('vehicle', 'make model licensePlate year');
+
+    res.status(200).json({ request });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   createRequest,
   getNearbyRequests,
   updateRequestStatus,
   getMyRequests,
   getRequestById,
+  rateRequest,
 };

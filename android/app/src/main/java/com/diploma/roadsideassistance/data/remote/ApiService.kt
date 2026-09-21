@@ -3,12 +3,15 @@ package com.diploma.roadsideassistance.data.remote
 import com.diploma.roadsideassistance.data.remote.dto.AuthResponse
 import com.diploma.roadsideassistance.data.remote.dto.CreateRequestBody
 import com.diploma.roadsideassistance.data.remote.dto.LoginRequest
+import com.diploma.roadsideassistance.data.remote.dto.RateRequestBody
 import com.diploma.roadsideassistance.data.remote.dto.RegisterRequest
 import com.diploma.roadsideassistance.data.remote.dto.CreateVehicleBody
 import com.diploma.roadsideassistance.data.remote.dto.RequestListResponse
 import com.diploma.roadsideassistance.data.remote.dto.SingleRequestResponse
 import com.diploma.roadsideassistance.data.remote.dto.SingleVehicleResponse
+import com.diploma.roadsideassistance.data.remote.dto.UpdateProfileRequest
 import com.diploma.roadsideassistance.data.remote.dto.UpdateStatusBody
+import com.diploma.roadsideassistance.data.remote.dto.UserResponse
 import com.diploma.roadsideassistance.data.remote.dto.VehicleListResponse
 import retrofit2.Response
 import retrofit2.http.Body
@@ -26,6 +29,9 @@ interface ApiService {
 
     @POST("api/auth/login")
     suspend fun login(@Body body: LoginRequest): Response<AuthResponse>
+
+    @PATCH("api/auth/me")
+    suspend fun updateProfile(@Body body: UpdateProfileRequest): Response<UserResponse>
 
     @POST("api/requests")
     suspend fun createRequest(@Body body: CreateRequestBody): Response<SingleRequestResponse>
@@ -47,6 +53,12 @@ interface ApiService {
     suspend fun updateRequestStatus(
         @Path("id") id: String,
         @Body body: UpdateStatusBody,
+    ): Response<SingleRequestResponse>
+
+    @PATCH("api/requests/{id}/rating")
+    suspend fun rateRequest(
+        @Path("id") id: String,
+        @Body body: RateRequestBody,
     ): Response<SingleRequestResponse>
 
     @GET("api/vehicles")

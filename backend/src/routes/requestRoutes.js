@@ -5,6 +5,7 @@ const {
   updateRequestStatus,
   getMyRequests,
   getRequestById,
+  rateRequest,
 } = require('../controllers/requestController');
 const { protect, authorize } = require('../middleware/auth');
 
@@ -17,6 +18,7 @@ router.post('/', authorize('CLIENT'), createRequest);
 router.get('/nearby', authorize('PROVIDER'), getNearbyRequests);
 router.get('/my', getMyRequests);
 router.patch('/:id/status', updateRequestStatus);
+router.patch('/:id/rating', authorize('CLIENT'), rateRequest);
 router.get('/:id', getRequestById);
 
 module.exports = router;

@@ -1,5 +1,7 @@
 package com.diploma.roadsideassistance.ui.request
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -13,7 +15,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -23,6 +27,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -33,8 +38,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -121,12 +128,28 @@ fun RequestDetailsScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             InfoCard(request = request)
+            Spacer(modifier = Modifier.height(12.dp))
+
+            CallButton(request = request, currentUserRole = currentUserRole)
             Spacer(modifier = Modifier.height(16.dp))
 
             Text("История на статуса", style = MaterialTheme.typography.titleLarge)
             Spacer(modifier = Modifier.height(8.dp))
             StatusHistoryList(history = request.statusHistory)
             Spacer(modifier = Modifier.height(24.dp))
+
+            RatingSection(
+                request = request,
+                currentUserId = currentUserId,
+                currentUserRole = currentUserRole,
+                isSubmitting = uiState.isSubmittingRating,
+                onSubmit = { rating, comment ->
+                    viewModel.submitRating(rating, comment) { message ->
+                        scope.launch { snackbarHostState.showSnackbar(message) }
+                    }
+                },
+            )
+            Spacer(modifier = Modifier.height(16.dp))
 
             ActionButtons(
                 request = request,
@@ -169,6 +192,112 @@ private fun InfoCard(request: ServiceRequestDto) {
                 value = request.provider?.name ?: "Все още не е назначен",
             )
             DetailRow(label = "Създадена на", value = request.createdAt)
+        }
+    }
+}
+
+// Показва бутон "Обади се" към отсрещната страна (клиент вижда телефона на назначения
+// доставчик, доставчик вижда телефона на клиента) - отваря системния dialer, без да
+// изисква CALL_PHONE permission (ACTION_DIAL само предзарежда номера).
+@Composable
+private fun CallButton(request: ServiceRequestDto, currentUserRole: UserRole) {
+    val phone = when (currentUserRole) {
+        UserRole.CLIENT -> request.provider?.phone
+        UserRole.PROVIDER -> request.client?.phone
+    }
+    if (phone.isNullOrBlank()) return
+
+    val context = LocalContext.current
+    OutlinedButton(
+        onClick = {
+            context.startActivity(Intent(Intent.ACTION_DIAL, Uri.parse("tel:$phone")))
+        },
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Icon(Icons.Default.Call, contentDescription = null)
+        Spacer(modifier = Modifier.width(8.dp))
+        Text("Обади се")
+    }
+}
+
+// Клиентът оценява доставчика еднократно, само след COMPLETED заявка на своя собствена
+// заявка (огледава валидацията от backend/src/controllers/requestController.js: rateRequest).
+@Composable
+private fun RatingSection(
+    request: ServiceRequestDto,
+    currentUserId: String,
+    currentUserRole: UserRole,
+    isSubmitting: Boolean,
+    onSubmit: (rating: Int, comment: String) -> Unit,
+) {
+    val isOwner = request.client?.id == currentUserId
+    val canRate = currentUserRole == UserRole.CLIENT && isOwner && request.status == RequestStatus.COMPLETED
+    if (!canRate) return
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            if (request.rating != null) {
+                Text("Твоята оценка", fontWeight = FontWeight.SemiBold)
+                Spacer(modifier = Modifier.height(4.dp))
+                StarRow(rating = request.rating, onRatingChange = null)
+                if (!request.ratingComment.isNullOrBlank()) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(request.ratingComment)
+                }
+            } else {
+                var selectedRating by remember { mutableStateOf(0) }
+                var comment by remember { mutableStateOf("") }
+
+                Text("Оцени доставчика", fontWeight = FontWeight.SemiBold)
+                Spacer(modifier = Modifier.height(8.dp))
+                StarRow(rating = selectedRating, onRatingChange = { selectedRating = it })
+                Spacer(modifier = Modifier.height(12.dp))
+                OutlinedTextField(
+                    value = comment,
+                    onValueChange = { comment = it },
+                    label = { Text("Коментар (по избор)") },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                Button(
+                    onClick = { onSubmit(selectedRating, comment) },
+                    enabled = selectedRating > 0 && !isSubmitting,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    if (isSubmitting) {
+                        CircularProgressIndicator(modifier = Modifier.height(20.dp), strokeWidth = 2.dp)
+                    } else {
+                        Text("Изпрати оценка")
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun StarRow(rating: Int, onRatingChange: ((Int) -> Unit)?) {
+    // Ползваме само Icons.Filled.Star (част от material-icons-core) за запълнено и
+    // незапълнено състояние, разграничени по прозрачност - Icons.Outlined.* изисква
+    // отделната material-icons-extended зависимост, която не е добавена в проекта.
+    Row {
+        for (star in 1..5) {
+            val filled = star <= rating
+            val tint = if (filled) {
+                MaterialTheme.colorScheme.primary
+            } else {
+                MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
+            }
+            if (onRatingChange != null) {
+                IconButton(onClick = { onRatingChange(star) }) {
+                    Icon(imageVector = Icons.Filled.Star, contentDescription = "$star звезди", tint = tint)
+                }
+            } else {
+                Icon(imageVector = Icons.Filled.Star, contentDescription = null, tint = tint)
+            }
         }
     }
 }

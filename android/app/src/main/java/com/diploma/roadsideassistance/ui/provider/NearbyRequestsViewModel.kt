@@ -18,6 +18,10 @@ data class NearbyRequestsUiState(
     val requests: List<ServiceRequestDto> = emptyList(),
     val errorMessage: String? = null,
     val locationErrorMessage: String? = null,
+    // Текущата локация на доставчика - ползва се само за показване на разстояние до
+    // всяка заявка в списъка (клиентска, не сървърна пресметка)
+    val providerLatitude: Double? = null,
+    val providerLongitude: Double? = null,
 ) {
     val isLoading: Boolean get() = isLoadingLocation || isLoadingRequests
 }
@@ -44,7 +48,12 @@ class NearbyRequestsViewModel(
                 return@launch
             }
 
-            _uiState.value = _uiState.value.copy(isLoadingLocation = false, isLoadingRequests = true)
+            _uiState.value = _uiState.value.copy(
+                isLoadingLocation = false,
+                isLoadingRequests = true,
+                providerLatitude = location.latitude,
+                providerLongitude = location.longitude,
+            )
 
             when (val result = requestRepository.getNearbyRequests(location.latitude, location.longitude)) {
                 is Resource.Success -> {

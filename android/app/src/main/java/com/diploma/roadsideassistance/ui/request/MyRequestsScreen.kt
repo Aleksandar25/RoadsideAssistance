@@ -87,7 +87,7 @@ fun MyRequestsScreen(
                     verticalArrangement = Arrangement.Center,
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    Text("Все още нямаш подадени заявки.")
+                    Text("Все още нямаш заявки.")
                 }
             }
             else -> {
